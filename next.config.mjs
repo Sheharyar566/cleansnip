@@ -16,7 +16,11 @@ const nextConfig = {
           },
           {
             key: "Access-Control-Allow-Origin",
-            value: "no-cors",
+            value: "*",
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET",
           },
         ],
       },
