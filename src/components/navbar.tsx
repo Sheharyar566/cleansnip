@@ -9,7 +9,7 @@ const Navbar = () => {
           <span className="flex items-center space-x-2 text-2xl font-bold text-primary dark:text-gray-100">
             <span>
               <Image
-                src="/img/logo.png"
+                src="/cleansnip/img/logo.png"
                 alt="Logo"
                 width={100}
                 height={100}
