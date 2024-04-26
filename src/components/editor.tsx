@@ -3,119 +3,107 @@
 import { StarIcon } from "@/icons";
 import File from "./file";
 import FilePicker from "./picker";
-import { useCallback, useState } from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { IItem } from "@/types/file.types";
+import { removeBackground } from "@/utils/removeBackground";
 
 const Editor = () => {
-  const [items, setItems] = useState<Record<string, IItem>>({});
+  const [files, setFiles] = useState<Record<string, IItem>>({});
+  const [filesInProgress, setFilesInProgresss] = useState<string[]>([]);
 
-  const [filesInProgress, setFilesInProgress] = useState<Set<string>>(
-    new Set()
-  );
+  const isBulkProcessing = useRef<boolean>(false);
 
-  const [downloadProgress, setDownloadProgress] = useState<{
-    fileName: string;
-    progress: number;
-    fileIndex: number;
-    totalFiles: number;
-  }>();
+  const hasFilesSelected = Boolean(Object.keys(files).length);
 
-  const hasFilesSelected = Boolean(Object.keys(items).length);
-
-  const onFilesPicked = useCallback((newFiles: Record<string, IItem>) => {
-    setItems((prevFiles) => ({ ...prevFiles, ...newFiles }));
-  }, []);
-
-  const removeBackground = async (name: string, file: File) => {
-    const remover = (await import("@imgly/background-removal")).default;
-
-    console.log("Processing file: ", name, file.size);
-    console.time("process" + name);
-
-    const blob = await remover(file, {
-      publicPath:
-        "http://" +
-        window.location.hostname +
-        ":" +
-        window.location.port +
-        "/models/",
-      proxyToWorker: true,
-      progress: (key, current, total) => {
-        if (key.startsWith("fetch")) {
-          setDownloadProgress({
-            fileName: key,
-            progress: (current / total) * 100,
-            fileIndex: 0,
-            totalFiles: 6,
-          });
-        }
-      },
-    });
-
-    console.timeEnd("process" + name);
-
-    return blob;
+  const onFilesPicked = (newFiles: Record<string, IItem>) => {
+    setFiles((prevFiles) => ({ ...prevFiles, ...newFiles }));
   };
 
   const singleRemove = async (fileName: string) => {
-    if (filesInProgress.has(fileName)) {
+    if (filesInProgress.includes(fileName)) {
       toast.error("File already in process");
       return;
     }
 
-    setFilesInProgress((value) => {
-      const newSet = new Set(...value.values());
-      newSet.add(fileName);
+    try {
+      setFilesInProgresss((value) => [...value, fileName]);
 
-      return newSet;
-    });
+      const blob = await removeBackground(fileName, files[fileName].original);
 
-    const blob = await removeBackground(fileName, items[fileName].originalFile);
+      setFiles((value) => ({
+        ...value,
+        [fileName]: {
+          ...value[fileName],
+          postProcess: blob,
+        },
+      }));
 
-    setFilesInProgress((value) => {
-      const newValue = new Set(...value.values());
-      newValue.delete(fileName);
+      const bufferedBlob = await blob.arrayBuffer();
 
-      return newValue;
-    });
+      if (!isBulkProcessing.current) {
+        toast.success("Successfully processed " + fileName);
+      }
 
-    const bufferedBlob = await blob.arrayBuffer();
-    return { fileName, data: new Uint8Array(bufferedBlob) };
+      return { fileName: fileName, data: new Uint8Array(bufferedBlob) };
+    } catch (e) {
+      toast.error("Failed to process the file: " + fileName);
+      console.error(e);
+
+      throw e;
+    } finally {
+      setFilesInProgresss((value) => {
+        const set = new Set(value);
+        set.delete(fileName);
+
+        return Array.from(set);
+      });
+    }
   };
 
   const bulkRemove = async () => {
-    const processedFiles = await Promise.all(
-      Object.keys(items).map((name) => singleRemove(name))
-    );
+    try {
+      isBulkProcessing.current = true;
 
-    const mappedFiles = processedFiles.reduce(
-      (prev, current) => ({
-        ...prev,
-        ...(current
-          ? {
-              [current.fileName]: [current.data, { level: 0 }],
-            }
-          : {}),
-      }),
-      {}
-    );
+      const processedFiles = await Promise.all(
+        Object.keys(files).map((name) => singleRemove(name))
+      );
 
-    const zip = (await import("fflate")).zip;
-    const fileSaver = (await import("file-saver")).default;
+      const mappedFiles = processedFiles.reduce(
+        (prev, current) => ({
+          ...prev,
+          ...(current
+            ? {
+                [current.fileName]: [current.data, { level: 0 }],
+              }
+            : {}),
+        }),
+        {}
+      );
 
-    zip(mappedFiles, {}, async (err, data) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
+      const zip = (await import("fflate")).zip;
+      const fileSaver = (await import("file-saver")).default;
 
-      fileSaver.saveAs(new Blob([data]), "zipped.zip");
-    });
+      zip(mappedFiles, {}, async (err, data) => {
+        if (err) {
+          toast.error("Failed to create the zip");
+          console.error(err);
+
+          return;
+        }
+
+        fileSaver.saveAs(new Blob([data]), "zipped.zip");
+      });
+    } catch (e) {
+      toast.error("Failed to process the files");
+      console.error(e);
+    } finally {
+      isBulkProcessing.current = false;
+    }
   };
 
   const onDeleteFile = (fileName: string) => {
-    setItems((prevFiles) => {
+    setFiles((prevFiles) => {
       const tempFiles = { ...prevFiles };
       delete tempFiles[fileName];
 
@@ -124,7 +112,7 @@ const Editor = () => {
   };
 
   return (
-    <div className="flex flex-col items-stretch">
+    <div className="container mx-auto mb-20 flex flex-col items-stretch">
       <div
         className={`gap-6 p-8 mx-auto ${
           hasFilesSelected
@@ -134,25 +122,25 @@ const Editor = () => {
       >
         <FilePicker onFilesPicked={onFilesPicked} />
 
-        {Object.entries(items).map(([name, item]) => (
+        {Object.entries(files).map(([name, file]) => (
           <File
             key={name}
-            originalFile={item.originalFile}
-            postProcessFile={item.postProcessFile}
-            isProcessing={filesInProgress.has(name)}
+            originalFile={file.original}
+            postProcessFile={file.postProcess}
+            isProcessing={filesInProgress.includes(name)}
             onDeleteFile={() => onDeleteFile(name)}
             onProcessFile={() => singleRemove(name)}
           />
         ))}
       </div>
 
-      {hasFilesSelected && (
+      {hasFilesSelected && !filesInProgress.length && (
         <button
-          className="bg-primary px-6 mx-auto py-4 rounded text-white font-bold shadow-indigo-700 flex flex-row gap-2 items-center"
+          className="text-primary border border-primary bg-white px-6 mx-auto py-4 rounded font-bold flex flex-row gap-2 items-center group hover:text-white hover:bg-primary transition-colors"
           onClick={bulkRemove}
         >
           Remove Background
-          <StarIcon className="text-white h-6 w-6" />
+          <StarIcon className="group-hover:text-white transition-colors text-primary h-6 w-6" />
         </button>
       )}
     </div>

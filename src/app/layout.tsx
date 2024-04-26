@@ -3,6 +3,7 @@ import { Lora, Rubik } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import { Toaster } from "react-hot-toast";
+import Footer from "@/components/footer";
 
 // const rubik = Rubik({ subsets: ["latin"] });
 const lora = Lora({ subsets: ["latin"] });
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body className={lora.className}>
         <Navbar />
         {children}
+        <Footer />
         <Toaster />
       </body>
     </html>

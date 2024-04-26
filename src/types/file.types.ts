@@ -1,4 +1,4 @@
 export interface IItem {
-  originalFile: File;
-  postProcessFile?: Blob;
+  original: File;
+  postProcess?: Blob;
 }

@@ -21,10 +21,10 @@ const Navbar = () => {
         </Link>
 
         <Link
-          href="/"
+          href="mailto:sheharyar566@gmail.com"
           className="px-6 py-2 text-white bg-primary rounded-md md:ml-5"
         >
-          Get Started
+          Contact
         </Link>
       </nav>
     </div>

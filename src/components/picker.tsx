@@ -23,7 +23,7 @@ const FilePicker = ({ onFilesPicked }: Props) => {
 
       for (const file of files) {
         mappedFiles[file.name] = {
-          originalFile: file,
+          original: file,
         };
       }
 
@@ -47,7 +47,7 @@ const FilePicker = ({ onFilesPicked }: Props) => {
       className="w-full h-52 border border-secondary border-opacity-20 shadow-sm rounded-md grid place-items-center border-dashed cursor-pointer hover:opacity-50 transition-opacity"
     >
       <input {...getInputProps()} />
-      <PickerIcon />
+      <PickerIcon className="stroke-secondary opacity-30 h-10 w-10" />
     </div>
   );
 };

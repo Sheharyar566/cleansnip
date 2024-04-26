@@ -2,7 +2,7 @@ interface Props {
   className?: string;
 }
 
-const LeftRightArrowIcon = ({ className }: Props) => (
+const Maximize = ({ className }: Props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
@@ -14,9 +14,9 @@ const LeftRightArrowIcon = ({ className }: Props) => (
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
-      d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+      d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"
     />
   </svg>
 );
 
-export default LeftRightArrowIcon;
+export default Maximize;

@@ -8,10 +8,14 @@
   }
 }
 
+* {
+  user-select: none;
+}
+
 .fileButton {
-  @apply grid place-items-center shadow-md rounded-md p-2 bg-white;
+  @apply grid place-items-center rounded-md p-1;
 }
 
 .fileButtonIcon {
-  @apply w-6 h-6;
+  @apply w-5 h-5;
 }
