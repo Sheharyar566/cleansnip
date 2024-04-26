@@ -7,7 +7,7 @@ export const removeBackground = async (name: string, file: File) => {
   const blob = await remover(file, {
     publicPath:
       process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/models"
+        ? "http://localhost:3000/cleansnip/models/"
         : "https://sheharyar566.gitub.io/cleansnip/models/",
     proxyToWorker: true,
   });
