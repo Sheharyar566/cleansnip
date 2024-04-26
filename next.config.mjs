@@ -14,6 +14,10 @@ const nextConfig = {
             key: "Cross-Origin-Embedder-Policy",
             value: "require-corp",
           },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "no-cors",
+          },
         ],
       },
     ];
